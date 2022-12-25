@@ -7,12 +7,12 @@ import {
   StyleSheet,
   ViewStyle,
 } from 'react-native';
-import THEME from 'src/styles/theme.style';
+import {colors} from 'src/theme';
 
 interface ButtonProps extends PressableProps {
   onPress: (event: GestureResponderEvent) => void;
-  isDisabled: boolean;
-  style: StyleProp<ViewStyle>;
+  isDisabled?: boolean;
+  style?: StyleProp<ViewStyle>;
 }
 const Button: FC<ButtonProps> = props => {
   return (
@@ -37,15 +37,15 @@ const Button: FC<ButtonProps> = props => {
 
 const styles = StyleSheet.create({
   button: {
-    flex: 1,
-    backgroundColor: THEME.UI.Primary.Blue,
-    height: THEME.SIZE.HUGE,
-    borderRadius: THEME.RADIUS.DEFAULT,
+    backgroundColor: colors.primary,
+    height: 30,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 10,
   },
   disabledButton: {
-    backgroundColor: THEME.UI.Grey[1],
+    backgroundColor: 'grey',
   },
 });
 export default Button;

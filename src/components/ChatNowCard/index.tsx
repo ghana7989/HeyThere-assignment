@@ -6,9 +6,10 @@ import {colors} from 'src/theme';
 
 interface ChatNowCardProps {
   user: NearByUser;
+  onChatNowClick: (user: NearByUser) => void;
 }
 const {width} = Dimensions.get('window');
-const ChatNowCard: FC<ChatNowCardProps> = ({user}) => {
+const ChatNowCard: FC<ChatNowCardProps> = ({user, onChatNowClick}) => {
   return (
     <>
       <View style={styles.container}>
@@ -25,10 +26,17 @@ const ChatNowCard: FC<ChatNowCardProps> = ({user}) => {
                 {user.name}
               </Text>
 
-              <Text style={styles.status}>Online</Text>
+              <Text style={styles.status}>
+                {/* ideally we should get this data from server */}
+                {Math.floor(Math.random() * 1000)} meters (online)
+              </Text>
             </View>
           </View>
-          <Pressable style={styles.buttonContainer}>
+          <Pressable
+            style={styles.buttonContainer}
+            onPress={() => {
+              onChatNowClick(user);
+            }}>
             <Text type="BOLD" style={{color: colors.primary}}>
               Chat Now
             </Text>

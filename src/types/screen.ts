@@ -1,9 +1,11 @@
 export type NearByUser = {
   id: string;
   name: string;
-  location: {
-    latitude: number;
-    longitude: number;
-  };
+  location: Location;
   image: string;
+};
+
+export type Location = {
+  latitude: number;
+  longitude: number;
 };

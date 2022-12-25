@@ -1,38 +1,74 @@
-import BottomSheet from '@gorhom/bottom-sheet';
-import Geolocation from '@react-native-community/geolocation';
-import MapboxGL from '@rnmapbox/maps';
 import React, {FC, useCallback, useEffect, useRef, useState} from 'react';
-import {StyleSheet, View} from 'react-native';
+// @ts-ignore
+import ConnectivityManager from 'react-native-connectivity-status';
+
+import {Alert, PermissionsAndroid, View} from 'react-native';
 import Marker from 'src/assets/logo/map-pin.svg';
 import ChatNowCard from 'src/components/ChatNowCard';
 import CustomMarker from 'src/components/CustomMarker';
 import {getUsersIn1KMRadius} from 'src/mock/users';
 import {colors} from 'src/theme';
-import {NearByUser} from 'src/types/screen';
+import {HomeScreenProps} from 'src/types/navigation';
+import {Location, NearByUser} from 'src/types/screen';
 
-MapboxGL.setAccessToken(
-  'pk.eyJ1IjoiZ2hhbmE3OTg5IiwiYSI6ImNrbmswNHZ6bzA2ZWwybnAzdjd4dzF2em0ifQ.Mr_QNWIcsw3YsAUUdVtHfg',
-);
-MapboxGL.requestAndroidLocationPermissions();
+import BottomSheet from '@gorhom/bottom-sheet';
+import Geolocation from '@react-native-community/geolocation';
+import RNRestart from 'react-native-restart';
+import Instructions from './components/Instructions';
+import SomethingWentWrong from './components/SomethingWentWrong';
+import {styles} from './styles.Home';
 
-interface HomeProps {}
-const Home: FC<HomeProps> = () => {
-  const [location, setLocation] = useState({
-    latitude: 0,
-    longitude: 0,
-  });
+import MapboxGL from '@rnmapbox/maps';
 
+const Home: FC<HomeScreenProps> = props => {
+  const [location, setLocation] = useState<null | Location>(null);
+  const [locationPermissionGranted, setLocationPermissionGranted] =
+    useState(false);
+  const [areLocationServicesAvailable, setAreLocationServicesAvailable] =
+    useState(false);
   const [selectedUser, setSelectedUser] = useState<null | NearByUser>(null);
 
   // ref
   const bottomSheetRef = useRef<BottomSheet>(null);
 
   // callbacks
-
   const handleCustomMarkerClick = useCallback((user: NearByUser) => {
     bottomSheetRef.current?.expand();
     setSelectedUser(user);
   }, []);
+  const requestLocationPermission = async () => {
+    try {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+      );
+      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+        setLocationPermissionGranted(true);
+        const locationServicesAvailable =
+          await ConnectivityManager.areLocationServicesEnabled();
+        setAreLocationServicesAvailable(locationServicesAvailable);
+      } else {
+        console.log('location permission denied');
+        Alert.alert('Location permission denied');
+      }
+    } catch (err) {
+      console.warn(err);
+    }
+  };
+
+  const onChatNowClick = useCallback(
+    (user: NearByUser) => {
+      props.navigation.navigate('PersonalChat', {
+        id: user.id,
+        name: user.name,
+        image: user.image,
+      });
+    },
+    [props.navigation],
+  );
+
+  const reloadApp = () => {
+    RNRestart.Restart();
+  };
 
   // side-effects
   useEffect(() => {
@@ -42,8 +78,21 @@ const Home: FC<HomeProps> = () => {
         longitude: info.coords.longitude,
       });
     });
+  }, [locationPermissionGranted]);
+
+  useEffect(() => {
+    requestLocationPermission();
   }, []);
 
+  if (!locationPermissionGranted || !areLocationServicesAvailable) {
+    return (
+      <Instructions requestLocationPermission={requestLocationPermission} />
+    );
+  }
+
+  if (!location) {
+    return <SomethingWentWrong reloadApp={reloadApp} />;
+  }
   return (
     <View style={styles.page}>
       <View style={styles.container}>
@@ -97,7 +146,7 @@ const Home: FC<HomeProps> = () => {
           animateOnMount
           snapPoints={[150, 150]}>
           <View style={styles.contentContainer}>
-            <ChatNowCard user={selectedUser} />
+            <ChatNowCard user={selectedUser} onChatNowClick={onChatNowClick} />
           </View>
         </BottomSheet>
       )}
@@ -105,25 +154,4 @@ const Home: FC<HomeProps> = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  page: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F5FCFF',
-  },
-  container: {
-    height: '100%',
-    width: '100%',
-    backgroundColor: 'tomato',
-  },
-  map: {
-    flex: 1,
-  },
-  contentContainer: {
-    flex: 1,
-    alignItems: 'center',
-    backgroundColor: colors.pink[100],
-  },
-});
 export default Home;
